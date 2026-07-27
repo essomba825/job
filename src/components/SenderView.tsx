@@ -314,22 +314,23 @@ export const SenderView: React.FC<SenderViewProps> = ({
       {/* Panneau de progression du transfert en cours */}
       {isTransferring && (
         <div className="glass-panel p-6 shadow-2xl relative overflow-hidden space-y-5">
-          <div className="absolute top-0 left-0 right-0 h-1.5 bg-white/5">
+          <div className="absolute top-0 left-0 right-0 h-2 bg-black/40">
             <div
-              className="h-full bg-gradient-to-r from-blue-500 to-cyan-400 transition-all duration-300 shadow-[0_0_12px_rgba(59,130,246,0.5)]"
+              className="h-full animate-shimmer shadow-[0_0_15px_rgba(6,182,212,0.6)]"
               style={{
-                width: `${overallTotalBytes > 0 ? (overallTransferredBytes / overallTotalBytes) * 100 : 0}%`,
+                width: `${Math.max(2, overallTotalBytes > 0 ? (overallTransferredBytes / overallTotalBytes) * 100 : 0)}%`,
               }}
             />
           </div>
 
-          <div className="flex items-center justify-between gap-4 pt-1">
+          <div className="flex items-center justify-between gap-4 pt-1 flex-wrap">
             <div>
-              <span className="text-xs font-semibold text-blue-400 uppercase tracking-widest">
-                Transfert P2P en cours
+              <span className="text-xs font-bold text-cyan-400 uppercase tracking-widest flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping" />
+                Transfert P2P Direct & Chiffré en cours
               </span>
-              <h3 className="text-base font-bold text-white truncate mt-0.5">
-                {currentFileTransferring ? currentFileTransferring.relativePath : 'Préparation du fichier...'}
+              <h3 className="text-lg font-extrabold text-white truncate mt-0.5">
+                {currentFileTransferring ? currentFileTransferring.relativePath : 'Envoi des morceaux de fichiers...'}
               </h3>
             </div>
             <div className="flex items-center gap-2">
@@ -350,17 +351,17 @@ export const SenderView: React.FC<SenderViewProps> = ({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-black/30 p-4 rounded-2xl border border-white/5 backdrop-blur-md">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-black/40 p-4 rounded-2xl border border-white/5 backdrop-blur-md">
             <div>
               <div className="text-[10px] text-slate-400 uppercase font-semibold">Vitesse d'émission</div>
-              <div className="text-base font-extrabold text-blue-400 font-mono mt-0.5">
-                {formatSpeed(overallSpeedBps)}
+              <div className="text-base font-extrabold text-cyan-400 font-mono mt-0.5">
+                {overallSpeedBps > 0 ? formatSpeed(overallSpeedBps) : 'Calcul du débit...'}
               </div>
             </div>
             <div>
               <div className="text-[10px] text-slate-400 uppercase font-semibold">Temps restant (ETA)</div>
               <div className="text-base font-extrabold text-slate-200 font-mono mt-0.5">
-                {formatTime(overallEtaSeconds)}
+                {overallSpeedBps > 0 && overallEtaSeconds > 0 ? formatTime(overallEtaSeconds) : 'En attente...'}
               </div>
             </div>
             <div>
@@ -372,7 +373,7 @@ export const SenderView: React.FC<SenderViewProps> = ({
             <div>
               <div className="text-[10px] text-slate-400 uppercase font-semibold">Progression globale</div>
               <div className="text-base font-bold text-emerald-400 font-mono mt-0.5">
-                {overallTotalBytes > 0 ? ((overallTransferredBytes / overallTotalBytes) * 100).toFixed(1) : 0} %
+                {overallTotalBytes > 0 ? ((overallTransferredBytes / overallTotalBytes) * 100).toFixed(1) : '0.0'} %
               </div>
             </div>
           </div>

@@ -12,6 +12,7 @@ interface RoomState {
   senderId?: string;
   receiverIds: string[];
   createdAt: number;
+  deleteTimer?: NodeJS.Timeout;
 }
 
 const rooms = new Map<string, RoomState>();
@@ -38,6 +39,8 @@ async function startServer() {
       methods: ['GET', 'POST'],
     },
     maxHttpBufferSize: 1e6, // Seul le signalement passe par ici, pas de données de fichiers !
+    pingInterval: 10000,
+    pingTimeout: 20000,
   });
 
   // Endpoints API
@@ -80,8 +83,8 @@ async function startServer() {
       }
     });
 
-    // Rejoint une salle existante
-    socket.on('join-room', ({ roomCode }, callback) => {
+    // Rejoint ou réintègre une salle existante
+    socket.on('join-room', ({ roomCode, role }, callback) => {
       const formattedCode = (roomCode || '').toUpperCase().trim();
       const room = rooms.get(formattedCode);
 
@@ -95,11 +98,23 @@ async function startServer() {
         return;
       }
 
+      // Annuler le minuteur de suppression de salle en cas de reconnexion
+      if (room.deleteTimer) {
+        clearTimeout(room.deleteTimer);
+        room.deleteTimer = undefined;
+      }
+
       socket.join(formattedCode);
       currentRoom = formattedCode;
-      userRole = 'receiver';
-      if (!room.receiverIds.includes(socket.id)) {
-        room.receiverIds.push(socket.id);
+
+      if (role === 'sender') {
+        userRole = 'sender';
+        room.senderId = socket.id;
+      } else {
+        userRole = 'receiver';
+        if (!room.receiverIds.includes(socket.id)) {
+          room.receiverIds.push(socket.id);
+        }
       }
 
       if (typeof callback === 'function') {
@@ -108,8 +123,8 @@ async function startServer() {
         socket.emit('room-joined', { roomCode: formattedCode });
       }
 
-      // Notifier l'expéditeur qu'un destinataire a rejoint la salle
-      socket.to(formattedCode).emit('peer-joined', { peerId: socket.id });
+      // Notifier les pairs de la présence/reconnexion
+      socket.to(formattedCode).emit('peer-joined', { peerId: socket.id, role: userRole });
     });
 
     // Relayement des offres SDP WebRTC
@@ -139,6 +154,15 @@ async function startServer() {
       }
     });
 
+    // Demande de redémarrage ICE (Reconnexion WebRTC)
+    socket.on('ice-restart', ({ target }) => {
+      if (target) {
+        io.to(target).emit('ice-restart', { sender: socket.id });
+      } else if (currentRoom) {
+        socket.to(currentRoom).emit('ice-restart', { sender: socket.id });
+      }
+    });
+
     // Réinitialisation de session
     socket.on('session-reset', () => {
       if (currentRoom) {
@@ -146,20 +170,25 @@ async function startServer() {
       }
     });
 
-    // Déconnexion
+    // Déconnexion avec délai de grâce (Rétention de la salle pendant 15 minutes)
     socket.on('disconnect', () => {
       if (currentRoom) {
         const room = rooms.get(currentRoom);
         if (room) {
           if (room.senderId === socket.id) {
             socket.to(currentRoom).emit('peer-disconnected', { role: 'sender', peerId: socket.id });
-            rooms.delete(currentRoom);
+            room.senderId = undefined;
           } else {
             room.receiverIds = room.receiverIds.filter((id) => id !== socket.id);
             socket.to(currentRoom).emit('peer-disconnected', { role: 'receiver', peerId: socket.id });
-            if (room.receiverIds.length === 0 && !room.senderId) {
-              rooms.delete(currentRoom);
-            }
+          }
+
+          // Si la salle devient complètement vide, lui accorder un délai de grâce de 15 minutes avant suppression
+          if (!room.senderId && room.receiverIds.length === 0) {
+            if (room.deleteTimer) clearTimeout(room.deleteTimer);
+            room.deleteTimer = setTimeout(() => {
+              rooms.delete(currentRoom!);
+            }, 15 * 60 * 1000); // 15 minutes de répit
           }
         }
       }

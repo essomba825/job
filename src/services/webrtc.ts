@@ -82,6 +82,18 @@ export class P2PTransferEngine {
       });
 
       this.socket.on('connect', () => {
+        // En cas de reconnexion automatique du socket WebRTC, réintégrer la salle sans perte d'état
+        if (this.roomCode && this.role) {
+          this.socket?.emit('join-room', { roomCode: this.roomCode, role: this.role }, (res: any) => {
+            if (res && res.success) {
+              if (this.role === 'sender' && this.lastManifestPayload) {
+                this.sendControlMessage('MANIFEST', this.lastManifestPayload);
+              } else if (this.role === 'receiver') {
+                this.requestManifest();
+              }
+            }
+          });
+        }
         resolve();
       });
 
@@ -121,6 +133,12 @@ export class P2PTransferEngine {
 
     this.socket.on('ice-candidate', async ({ candidate }) => {
       await this.handleIceCandidate(candidate);
+    });
+
+    this.socket.on('ice-restart', async ({ sender }) => {
+      if (this.role === 'sender') {
+        await this.createOffer(sender, { iceRestart: true });
+      }
     });
 
     this.socket.on('peer-disconnected', () => {
@@ -630,9 +648,9 @@ export class P2PTransferEngine {
 
   // --- Gestion SDP WebRTC ---
 
-  private async createOffer(targetPeerId: string) {
+  private async createOffer(targetPeerId: string, options?: RTCOfferOptions) {
     if (!this.peerConnection) return;
-    const offer = await this.peerConnection.createOffer();
+    const offer = await this.peerConnection.createOffer(options);
     await this.peerConnection.setLocalDescription(offer);
     this.socket?.emit('offer', { target: targetPeerId, offer });
   }

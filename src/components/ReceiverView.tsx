@@ -278,21 +278,39 @@ export const ReceiverView: React.FC<ReceiverViewProps> = ({
 
       {/* Affichage de la progression du transfert en direct */}
       {isTransferring && (
-        <div className="glass-panel p-6 shadow-2xl space-y-6">
-          <div className="flex items-center justify-between gap-4 border-b border-white/10 pb-4">
-            <div>
-              <span className="badge-p2p inline-flex items-center gap-1.5">
-                <HardDrive className="w-3.5 h-3.5" />
-                Écriture directe sur disque (FileSystemAccess)
-              </span>
-              <h3 className="text-base font-bold text-white truncate mt-2">
-                {currentReceivingFile ? currentReceivingFile.relativePath : 'Réception du fichier...'}
-              </h3>
+        <div className="glass-panel p-6 shadow-2xl space-y-6 relative overflow-hidden border border-blue-500/20">
+          {/* Arrière-plan lumineux avec lueur pulsante */}
+          <div className="absolute -right-20 -bottom-20 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl pointer-events-none animate-pulse-glow" />
+
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/10 pb-5">
+            <div className="flex items-center gap-4">
+              {/* Animation Disque / Streaming actif */}
+              <div className="relative w-14 h-14 rounded-2xl bg-blue-500/10 border border-blue-500/30 flex items-center justify-center shrink-0 shadow-lg shadow-blue-500/10">
+                <span className="absolute inset-0 rounded-2xl border border-cyan-400/40 animate-ping opacity-20" />
+                <HardDrive className="w-7 h-7 text-cyan-400 animate-pulse" />
+                <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-emerald-400 rounded-full border-2 border-slate-950 shadow-sm" />
+              </div>
+
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="badge-p2p inline-flex items-center gap-1.5 text-[11px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+                    Écriture directe sur disque (FileSystemAccess)
+                  </span>
+                  <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-md bg-blue-500/10 text-blue-300 border border-blue-500/20">
+                    RAM Libérée (Streaming)
+                  </span>
+                </div>
+
+                <h3 className="text-lg font-black text-white truncate mt-1.5 tracking-tight">
+                  {currentReceivingFile ? currentReceivingFile.relativePath : 'Initialisation du fichier...'}
+                </h3>
+              </div>
             </div>
 
-            <div className="text-right font-mono">
-              <div className="text-2xl font-black text-blue-400">
-                {overallTotalBytes > 0 ? ((overallTransferredBytes / overallTotalBytes) * 100).toFixed(1) : 0} %
+            <div className="text-right font-mono bg-black/30 px-4 py-2 rounded-2xl border border-white/5 backdrop-blur-md self-start md:self-auto">
+              <div className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300">
+                {overallTotalBytes > 0 ? ((overallTransferredBytes / overallTotalBytes) * 100).toFixed(1) : '0.0'} %
               </div>
               <div className="text-xs text-slate-400 mt-0.5">
                 {formatBytes(overallTransferredBytes)} / {formatBytes(overallTotalBytes)}
@@ -300,34 +318,60 @@ export const ReceiverView: React.FC<ReceiverViewProps> = ({
             </div>
           </div>
 
-          <div className="w-full h-2.5 bg-black/40 rounded-full overflow-hidden border border-white/10 p-0.5 shadow-inner backdrop-blur-md">
-            <div
-              className="h-full bg-gradient-to-r from-blue-500 to-cyan-400 rounded-full transition-all duration-200 shadow-[0_0_12px_rgba(59,130,246,0.5)]"
-              style={{
-                width: `${overallTotalBytes > 0 ? (overallTransferredBytes / overallTotalBytes) * 100 : 0}%`,
-              }}
-            />
+          {/* Barre de progression avec effet Shimmer / Laser */}
+          <div className="space-y-1.5">
+            <div className="flex justify-between items-center text-xs font-semibold text-slate-300 px-1">
+              <span className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+                {overallTransferredBytes === 0 ? 'Préparation des blocs de données...' : 'Streaming des données en cours...'}
+              </span>
+              <span className="font-mono text-cyan-400">
+                {overallTotalBytes > 0 ? Math.round((overallTransferredBytes / overallTotalBytes) * 100) : 0}%
+              </span>
+            </div>
+
+            <div className="w-full h-3 bg-black/50 rounded-full overflow-hidden border border-white/10 p-0.5 shadow-inner backdrop-blur-md relative">
+              <div
+                className="h-full rounded-full transition-all duration-300 animate-shimmer shadow-[0_0_15px_rgba(6,182,212,0.6)]"
+                style={{
+                  width: `${Math.max(2, overallTotalBytes > 0 ? (overallTransferredBytes / overallTotalBytes) * 100 : 0)}%`,
+                }}
+              />
+            </div>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 bg-black/30 p-4 rounded-2xl border border-white/5 backdrop-blur-md">
-            <div>
-              <div className="text-[10px] text-slate-400 uppercase font-semibold">Vitesse de réception</div>
-              <div className="text-base font-extrabold text-blue-400 font-mono mt-0.5">
-                {formatSpeed(overallSpeedBps)}
+          {/* Indicateurs de performances & d'intégrité */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-black/40 p-4 rounded-2xl border border-white/5 backdrop-blur-md">
+            <div className="p-2">
+              <div className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Vitesse de réception</div>
+              <div className="text-base font-extrabold text-cyan-400 font-mono mt-1 flex items-center gap-1.5">
+                {overallSpeedBps > 0 ? (
+                  formatSpeed(overallSpeedBps)
+                ) : (
+                  <span className="text-xs text-slate-400 italic flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping" />
+                    Calcul du débit en cours...
+                  </span>
+                )}
               </div>
             </div>
 
-            <div>
-              <div className="text-[10px] text-slate-400 uppercase font-semibold">Temps restant estimé (ETA)</div>
-              <div className="text-base font-extrabold text-slate-200 font-mono mt-0.5">
-                {formatTime(overallEtaSeconds)}
+            <div className="p-2">
+              <div className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Temps restant estimé (ETA)</div>
+              <div className="text-base font-extrabold text-slate-200 font-mono mt-1">
+                {overallSpeedBps > 0 && overallEtaSeconds > 0 ? (
+                  formatTime(overallEtaSeconds)
+                ) : (
+                  <span className="text-xs text-slate-400 italic">En attente de calcul...</span>
+                )}
               </div>
             </div>
 
-            <div>
-              <div className="text-[10px] text-slate-400 uppercase font-semibold">Sécurité & Intégrité</div>
-              <div className="text-xs font-semibold text-emerald-400 mt-1 flex items-center gap-1">
-                <ShieldCheck className="w-4 h-4" /> SHA-256 en continu
+            <div className="p-2">
+              <div className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Sécurité & Intégrité</div>
+              <div className="text-xs font-semibold text-emerald-400 mt-1 flex items-center gap-1.5">
+                <ShieldCheck className="w-4 h-4 shrink-0" />
+                <span>SHA-256 en continu</span>
               </div>
             </div>
           </div>

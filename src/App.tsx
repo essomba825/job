@@ -342,6 +342,21 @@ export default function App() {
       />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+        {/* Bannière d'information sur la rétention de session */}
+        {roomCode && (
+          <div className="glass-panel-sm px-4 py-2.5 border-blue-500/20 bg-blue-500/10 text-blue-200 text-xs flex items-center justify-between gap-3 backdrop-blur-md">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+              <span>
+                <strong>Session P2P Protégée :</strong> En cas de micro-coupure réseau, la salle ({roomCode}) et vos fichiers restent sauvegardés. Reconnexion automatique active.
+              </span>
+            </div>
+            <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 shrink-0 hidden sm:inline-block">
+              Anti-expiration 15 min
+            </span>
+          </div>
+        )}
+
         {/* Alerte d'erreur */}
         {errorMessage && (
           <div className="glass-panel-sm p-4 border-rose-500/30 bg-rose-500/10 text-rose-300 text-xs flex items-center justify-between gap-3 animate-fade-in">
