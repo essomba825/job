@@ -1,0 +1,6 @@
+{
+  "name": "Transfert P2P Ultra-Rapide",
+  "description": "Application Web P2P pour le transfert sécurisé et direct de très grands fichiers via WebRTC.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

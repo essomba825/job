@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="fr" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Transfert P2P Ultra-Rapide | Grands Fichiers Directs</title>
+    <meta name="description" content="Application Web P2P pour le transfert sécurisé et direct de très grands fichiers (6 Go à 50 Go+) via WebRTC sans passage par un serveur cloud." />
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#0f172a" />
+    <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+  </head>
+  <body class="bg-slate-950 text-slate-100 min-h-screen selection:bg-cyan-500 selection:text-slate-950 antialiased">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js').catch(err => {
+            console.log('Enregistrement du Service Worker échoué:', err);
+          });
+        });
+      }
+    </script>
+  </body>
+</html>
+
